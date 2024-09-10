@@ -1,0 +1,5 @@
+services:
+  rtorrent:
+    build:
+      context: .
+    image: ${IMAGE:-localhost/rtorrent}:${TAG:-latest}
