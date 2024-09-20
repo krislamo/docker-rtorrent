@@ -22,7 +22,6 @@ RUN apt-get update && \
 
 RUN curl -s -o "/tmp/libtorrent-${LIBTORRENT_VERSION}.tar.gz" -L "$LIBTORRENT_URL" && \
     FILE_HASH="$(sha256sum /tmp/libtorrent-${LIBTORRENT_VERSION}.tar.gz | cut -d' ' -f1)" && \
-    echo hey; \
     du -sh "/tmp/libtorrent-${LIBTORRENT_VERSION}.tar.gz"; \
     if [ ! "$LIBTORRENT_HASH" = "$FILE_HASH" ]; then \
         echo "SHA256 verification failed!" && \
@@ -69,7 +68,9 @@ COPY --from=build /tmp/rtorrent.rc.template /tmp/rtorrent.rc.template
 RUN apt-get update && \
     apt-get install -y \
         libcurl4 \
-        libncursesw6 && \
+        libncursesw6 \
+        procps \
+        screen && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

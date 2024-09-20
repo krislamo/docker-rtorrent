@@ -1,6 +1,9 @@
 #!/bin/bash
 set -eu
 
+# Polling interval
+SLEEP_INTERVAL=${SLEEP_INTERVAL:-2}
+
 # GID/UID
 USER_ID=${GUID:-1000}
 GROUP_ID=${PGID:-1000}
@@ -12,7 +15,7 @@ id -u rtorrent &>/dev/null || \
 
 # Update group/user IDs
 groupmod -o -g "$GROUP_ID" rtorrent
-usermod -o -u "$USER_ID" rtorrent 2>/dev/null
+usermod -o -u "$USER_ID" rtorrent &>/dev/null
 
 # Copy default config
 if [ ! -e /home/rtorrent/.rtorrent.rc ]; then
@@ -20,5 +23,18 @@ if [ ! -e /home/rtorrent/.rtorrent.rc ]; then
     chown rtorrent:rtorrent /home/rtorrent/.rtorrent.rc
 fi
 
-# Execute as the rtorrent user
-su - rtorrent -c "rtorrent"
+# Start rtorrent in a detached screen session
+su - rtorrent -c "screen -dmS rtorrent rtorrent" &
+
+# Wait for the su process to finish
+wait $!
+
+# Find rtorrent PID and monitor it
+RTORRENT_PID="$(pgrep -f "^rtorrent$")"
+
+# Trap for graceful shutdown
+trap 'su - rtorrent -c "kill -15 $RTORRENT_PID"' SIGTERM SIGINT
+
+# Wait for PID
+while kill -0 "$RTORRENT_PID" 2>/dev/null; do sleep "$SLEEP_INTERVAL"; done
+exit 0
