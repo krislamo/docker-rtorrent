@@ -1,0 +1,33 @@
+volumes:
+  gluetun:
+
+services:
+  gluetun:
+    image: "qmcgaw/gluetun:${GLUETUN_VERSION}"
+    container_name: "${GLUETUN_NAME:-gluetun}"
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - gluetun:/gluetun
+      - "${GLUETUN_TMP:-./scratch/gluetun}:/tmp/gluetun"
+    environment:
+      - OPENVPN_USER=${VPN_USER}
+      - OPENVPN_PASSWORD=${VPN_PASSWORD}
+      - TZ=America/New_York
+      - VPN_PORT_FORWARDING=${VPN_PORTFORWARD:-off}
+      - VPN_SERVICE_PROVIDER=private internet access
+      - VPN_TYPE=openvpn
+
+  rtorrent:
+    image: ${RTORRENT_IMAGE:-localhost/rtorrent}:${RTORRENT_VERSION:-latest}
+    container_name: "${RTORRENT_NAME:-rtorrent}"
+    network_mode: "service:gluetun"
+    depends_on:
+      - gluetun
+    environment:
+      - DEBUG=${DEBUG:-false}
+      - GLUETUN_FORWARD=${GLUETUN_FORWARD:-false}
+    volumes:
+      - "${GLUETUN_TMP:-./scratch/gluetun}:/tmp/gluetun:ro"
